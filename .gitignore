@@ -3,4 +3,29 @@
 *.swp
 *.bak
 ~*
+# Quartus compilation database/cache
+db/
+incremental_db/
 
+# Compilation outputs
+output_files/
+simulation/
+greybox_tmp/
+
+# Programming files (regenerated on compile)
+*.sof
+*.pof
+*.jam
+*.jbc
+*.jic
+*.rbf
+
+# Reports and logs (regenerated on compile)
+*.rpt
+*.summary
+*.smsg
+*.done
+*.qws       # workspace state (window layout) — optional, see note below
+
+# PLL/IP generated simulation & synthesis files (if using IP catalog)
+*_sim/
