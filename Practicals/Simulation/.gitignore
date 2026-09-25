@@ -1,0 +1,17 @@
+# Mentor ModelSim / Questa generated files & logs
+work/
+transcript*
+vsim.wlf
+*.wlf
+*.mti
+*.dat
+*.dbs
+*.psm
+*.cmp
+*.vstf
+*.ucdb
+cov*/
+sc_dpiheader.h
+vsim.dbg
+modelsim.ini
+qwave.db
