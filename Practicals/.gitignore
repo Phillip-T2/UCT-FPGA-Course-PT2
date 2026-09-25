@@ -9,7 +9,7 @@ incremental_db/
 
 # Compilation outputs
 output_files/
-simulation/
+# simulation/
 greybox_tmp/
 
 # Programming files (regenerated on compile)
