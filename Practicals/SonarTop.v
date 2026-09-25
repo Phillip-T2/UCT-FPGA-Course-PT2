@@ -3,6 +3,13 @@ module SonarTop(
 	output	[9:0]LED
 );
 
-assign LED = Switch;
+// Sources and Probes .........................................................
+wire [9:0]Source;
+SourcesAndProbes SourcesAndProbes_inst(
+	.source(Source),
+	.probe(Switch)
+);
+
+assign LED = Switch ^ Source;  // XOR between Switch state and Source
 
 endmodule

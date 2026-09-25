@@ -65,7 +65,6 @@ set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
 set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
 set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
-set_global_assignment -name VERILOG_FILE SonarTop.v
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
@@ -89,4 +88,6 @@ set_location_assignment PIN_A13 -to Switch[6]
 set_location_assignment PIN_A14 -to Switch[7]
 set_location_assignment PIN_B14 -to Switch[8]
 set_location_assignment PIN_F15 -to Switch[9]
+set_global_assignment -name QSYS_FILE MegaFunctions/SourcesAndProbes.qsys
+set_global_assignment -name VERILOG_FILE SonarTop.v
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
