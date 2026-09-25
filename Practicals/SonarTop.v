@@ -14,13 +14,13 @@ module SonarTop(
 );
 
 // Sources and Probes .........................................................
-//wire [9:0]Source;
-//SourcesAndProbes SourcesAndProbes_inst(
-//	.source(Source),
-//	.probe(Switch)
-//);
+wire [9:0]Source;
+SourcesAndProbes SourcesAndProbes_inst(
+	.source(Source),
+	.probe(Switch)
+);
 
-//assign LED = Switch ^ Source;  // XOR between Switch state and Source
+assign LED = Switch ^ Source;  // XOR between Switch state and Source
 
 // ADXL345 wires and instance .................................................
 wire [15:0]G_Sensor_X;
