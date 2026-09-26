@@ -43,3 +43,36 @@ set_multicycle_path -from [get_clocks ipClk_50M] \
 set_multicycle_path -from [get_clocks ipClk_50M] \
                     -to   [get_clocks opADXL345_SClk] \
                     -start -hold 4
+					
+#-------------------------------------------------------------------------------
+create_generated_clock -source [get_pins { SDRAM_PLL_Inst|altpll_component|auto_generated|pll1|clk[1] } ] \
+                       -name opClk_SDRAM [get_ports opClk_SDRAM]
+
+# Page 19 in the datasheet
+
+# Suppose +- 100 ps skew
+# max: t_AC (External Device) + Board Delay (Clock) + Board Delay (Data)
+# min: t_OH (External Device) + Board Delay (Clock) + Board Delay (Data)
+# max 5.4(max) +0.4(trace delay) +0.1 = 5.9
+# min 2.7(min) +0.4(trace delay) -0.1 = 3.0
+
+set_input_delay -max -clock opClk_SDRAM 5.9 [get_ports bpSDRAM*]
+set_input_delay -min -clock opClk_SDRAM 3.0 [get_ports bpSDRAM*]
+
+# shift-window (clk[0] is also 100 MHz, but with -90 deg phase shift)
+
+set_multicycle_path -from [get_clocks opClk_SDRAM] \
+                    -to   [get_clocks SDRAM_PLL:SDRAM_PLL_Inst|altpll:altpll_component|SDRAM_PLL_altpll:auto_generated|wire_pll1_clk[0] ] \
+                    -setup 2
+
+# Suppose +- 100 ps skew
+# max : Board Delay (Data) - Board Delay (Clock) + t_DS (External Device)
+# min : Board Delay (Data) - Board Delay (Clock) - t_DH (External Device)
+# max  1.5 +0.1 =  1.6
+# min -0.8 -0.1 = -0.9
+
+set_output_delay -max -clock opClk_SDRAM  1.6 [get_ports { bpSDRAM* opSDRAM* }]
+set_output_delay -min -clock opClk_SDRAM -0.9 [get_ports { bpSDRAM* opSDRAM* }]
+
+set_false_path -from * -to [get_ports opReadData*]
+#-------------------------------------------------------------------------------
