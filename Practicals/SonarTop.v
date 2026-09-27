@@ -1,7 +1,7 @@
 module SonarTop(
 	// Switches and LEDs .......................................................
-	input		[9:0]Switch,
-	output	[9:0]LED,
+	input		[9:0]ipSwitch,
+	output	[9:0]opLED,
 	
 	// ADXL345 SPI communication controller ....................................
 	input ipClk_50M,
@@ -28,13 +28,13 @@ module SonarTop(
 );
 
 // Sources and Probes .........................................................
-wire [9:0]Source;
-SourcesAndProbes SourcesAndProbes_inst(
-	.source(Source),
-	.probe(Switch)
-);
+//wire [9:0]Source;
+//SourcesAndProbes SourcesAndProbes_inst(
+//	.source(Source),
+//	.probe(Switch)
+//);
 
-assign LED = Switch ^ Source;  // XOR between Switch state and Source
+//assign LED = Switch ^ Source;  // XOR between Switch state and Source
 
 // ADXL345 wires and instance .................................................
 wire [15:0]G_Sensor_X;
@@ -173,6 +173,99 @@ always @(posedge Clk_100M) begin
   if(Avalon_ReadDataValid) opReadData <= Avalon_ReadData;
 end
 //------------------------------------------------------------------------------
+
+wire [29:0]Master_Address;
+wire [ 3:0]Master_ByteEnable;
+wire       Master_WaitRequest;
+wire [31:0]Master_WriteData;
+wire       Master_Write = 0;
+wire       Master_Read  = 0;
+wire [31:0]Master_ReadData;
+wire       Master_ReadDataValid;
+
+wire [ 7:0]Registers_Address;
+wire [ 3:0]Registers_ByteEnable;
+wire       Registers_WaitRequest;
+wire [31:0]Registers_WriteData;
+wire       Registers_Write;
+wire       Registers_Read;
+wire [31:0]Registers_ReadData;
+wire       Registers_ReadDataValid;
+
+wire [24:0]SDRAM_Address;
+wire [ 1:0]SDRAM_ByteEnable;
+wire       SDRAM_WaitRequest;
+wire [15:0]SDRAM_WriteData;
+wire       SDRAM_Write;
+wire       SDRAM_Read;
+wire [15:0]SDRAM_ReadData;
+wire       SDRAM_ReadDataValid;
+
+Platform_Avalon QSys_Inst (
+  .clk_clk                (Clk_100M               ), // In
+  .reset_reset_n          (~Reset                 ), // In
+
+  .master_address         (Master_Address         ), // In
+  .master_byteenable      (Master_ByteEnable      ), // In
+  .master_burstcount      (1                      ), // In
+  .master_waitrequest     (Master_WaitRequest     ), // Out
+  .master_writedata       (Master_WriteData       ), // In
+  .master_write           (Master_Write           ), // In
+  .master_read            (Master_Read            ), // In
+  .master_readdata        (Master_ReadData        ), // Out
+  .master_readdatavalid   (Master_ReadDataValid   ), // Out
+  .master_debugaccess     (0                      ), // In
+
+  .registers_address      (Registers_Address      ), // Out
+  .registers_byteenable   (Registers_ByteEnable   ), // Out
+  .registers_burstcount   (                       ), // Out
+  .registers_waitrequest  (Registers_WaitRequest  ), // In
+  .registers_writedata    (Registers_WriteData    ), // Out
+  .registers_write        (Registers_Write        ), // Out
+  .registers_read         (Registers_Read         ), // Out
+  .registers_readdata     (Registers_ReadData     ), // In
+  .registers_readdatavalid(Registers_ReadDataValid), // In
+  .registers_debugaccess  (                       ), // Out
+
+  .sdram_address          (SDRAM_Address          ), // Out
+  .sdram_byteenable       (SDRAM_ByteEnable       ), // Out
+  .sdram_burstcount       (                       ), // Out
+  .sdram_waitrequest      (SDRAM_WaitRequest      ), // In
+  .sdram_writedata        (SDRAM_WriteData        ), // Out
+  .sdram_write            (SDRAM_Write            ), // Out
+  .sdram_read             (SDRAM_Read             ), // Out
+  .sdram_readdata         (SDRAM_ReadData         ), // In
+  .sdram_readdatavalid    (SDRAM_ReadDataValid    ), // In
+  .sdram_debugaccess      (                       )  // Out
+);
+
+// Assign some registers ------------------------------------------------------
+
+assign Registers_WaitRequest = 0;
+
+always @(posedge Clk_100M) begin
+  if(Reset) begin
+    opLED <= 0;
+
+  end else if(Registers_Write) begin
+    case(Registers_Address)
+      8'h01: begin
+        if(Registers_ByteEnable[0]) opLED[7:0] <= Registers_WriteData[7:0];
+        if(Registers_ByteEnable[1]) opLED[9:8] <= Registers_WriteData[9:8];
+      end
+    endcase
+  end
+
+  case(Registers_Address)
+    8'h00: Registers_ReadData <= ipSwitch;
+    8'h01: Registers_ReadData <= opLED;
+
+    8'h10: Registers_ReadData <= { {16{G_Sensor_X[15]}}, G_Sensor_X };
+    8'h11: Registers_ReadData <= { {16{G_Sensor_Y[15]}}, G_Sensor_Y };
+    8'h12: Registers_ReadData <= { {16{G_Sensor_Z[15]}}, G_Sensor_Z };
+  endcase
+  Registers_ReadDataValid <= Registers_Read;
+end
 
 
 endmodule

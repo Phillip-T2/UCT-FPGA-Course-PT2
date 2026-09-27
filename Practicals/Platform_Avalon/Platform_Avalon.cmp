@@ -1,0 +1,37 @@
+	component Platform_Avalon is
+		port (
+			clk_clk                 : in  std_logic                     := 'X';             -- clk
+			master_waitrequest      : out std_logic;                                        -- waitrequest
+			master_readdata         : out std_logic_vector(31 downto 0);                    -- readdata
+			master_readdatavalid    : out std_logic;                                        -- readdatavalid
+			master_burstcount       : in  std_logic_vector(0 downto 0)  := (others => 'X'); -- burstcount
+			master_writedata        : in  std_logic_vector(31 downto 0) := (others => 'X'); -- writedata
+			master_address          : in  std_logic_vector(29 downto 0) := (others => 'X'); -- address
+			master_write            : in  std_logic                     := 'X';             -- write
+			master_read             : in  std_logic                     := 'X';             -- read
+			master_byteenable       : in  std_logic_vector(3 downto 0)  := (others => 'X'); -- byteenable
+			master_debugaccess      : in  std_logic                     := 'X';             -- debugaccess
+			registers_waitrequest   : in  std_logic                     := 'X';             -- waitrequest
+			registers_readdata      : in  std_logic_vector(31 downto 0) := (others => 'X'); -- readdata
+			registers_readdatavalid : in  std_logic                     := 'X';             -- readdatavalid
+			registers_burstcount    : out std_logic_vector(0 downto 0);                     -- burstcount
+			registers_writedata     : out std_logic_vector(31 downto 0);                    -- writedata
+			registers_address       : out std_logic_vector(7 downto 0);                     -- address
+			registers_write         : out std_logic;                                        -- write
+			registers_read          : out std_logic;                                        -- read
+			registers_byteenable    : out std_logic_vector(3 downto 0);                     -- byteenable
+			registers_debugaccess   : out std_logic;                                        -- debugaccess
+			reset_reset_n           : in  std_logic                     := 'X';             -- reset_n
+			sdram_waitrequest       : in  std_logic                     := 'X';             -- waitrequest
+			sdram_readdata          : in  std_logic_vector(15 downto 0) := (others => 'X'); -- readdata
+			sdram_readdatavalid     : in  std_logic                     := 'X';             -- readdatavalid
+			sdram_burstcount        : out std_logic_vector(0 downto 0);                     -- burstcount
+			sdram_writedata         : out std_logic_vector(15 downto 0);                    -- writedata
+			sdram_address           : out std_logic_vector(24 downto 0);                    -- address
+			sdram_write             : out std_logic;                                        -- write
+			sdram_read              : out std_logic;                                        -- read
+			sdram_byteenable        : out std_logic_vector(1 downto 0);                     -- byteenable
+			sdram_debugaccess       : out std_logic                                         -- debugaccess
+		);
+	end component Platform_Avalon;
+

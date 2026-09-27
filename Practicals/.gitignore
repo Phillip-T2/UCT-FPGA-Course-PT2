@@ -11,6 +11,8 @@ incremental_db/
 output_files/
 # simulation/
 greybox_tmp/
+unsaved/
+
 
 # Programming files (regenerated on compile)
 *.sof

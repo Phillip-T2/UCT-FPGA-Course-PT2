@@ -162,15 +162,8 @@ set_instance_assignment -name BOARD_MODEL_NEAR_C 6.0P -to bpSDRAM*
 set_instance_assignment -name VIRTUAL_PIN ON -to opReadData*
 #-------------------------------------------------------------------------------
 
-set_global_assignment -name VERILOG_FILE "IS42S16320D-SDRAM/IS42S16320D.v"
-set_global_assignment -name VERILOG_FILE Simulation/ADXL345.v
-set_global_assignment -name QSYS_FILE MegaFunctions/SourcesAndProbes.qsys
-set_global_assignment -name VERILOG_FILE SonarTop.v
-set_global_assignment -name SDC_FILE SonarPT2.sdc
-set_global_assignment -name QIP_FILE SDRAM_PLL.qip
 set_global_assignment -name ENABLE_SIGNALTAP ON
 set_global_assignment -name USE_SIGNALTAP_FILE stp5.stp
-set_global_assignment -name SIGNALTAP_FILE stp5.stp
 set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id auto_signaltap_0
 set_global_assignment -name SLD_NODE_ENTITY_NAME sld_signaltap -section_id auto_signaltap_0
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_clk -to "SDRAM_PLL:SDRAM_PLL_Inst|altpll:altpll_component|SDRAM_PLL_altpll:auto_generated|clk[0]" -section_id auto_signaltap_0
@@ -341,5 +334,14 @@ set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[15] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[21] -to auto_signaltap_0|gnd -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[24] -to auto_signaltap_0|gnd -section_id auto_signaltap_0
-set_global_assignment -name SLD_FILE db/stp5_auto_stripped.stp
+set_global_assignment -name QSYS_FILE Platform_Avalon.qsys
+set_global_assignment -name QIP_FILE Platform_Avalon/synthesis/Platform_Avalon.qip
+set_global_assignment -name VERILOG_FILE "IS42S16320D-SDRAM/IS42S16320D.v"
+set_global_assignment -name VERILOG_FILE Simulation/ADXL345.v
+set_global_assignment -name QSYS_FILE MegaFunctions/SourcesAndProbes.qsys
+set_global_assignment -name VERILOG_FILE SonarTop.v
+set_global_assignment -name SDC_FILE SonarPT2.sdc
+set_global_assignment -name QIP_FILE SDRAM_PLL.qip
+set_global_assignment -name SIGNALTAP_FILE stp5.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SLD_FILE db/stp5_auto_stripped.stp
