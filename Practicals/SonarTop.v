@@ -273,14 +273,14 @@ always @(posedge Clk_100M) begin
 end
 
 // PWM Module .................................................................
-//PWM_module PWM_inst(
-//	.ipClk(Clk_100M),	// Assume this is 100MHz clock
-//	.ipReset(~ipnReset),	// Synchronous reset (active high)
-//	.ipMute(ipSwitch[8]),
-//	.PWM_amp(ipSwitch[7:0]),
-//	.opPWM()
-//	);
-//
+PWM_module PWM_inst(
+	.ipClk(Clk_100M),	// Assume this is 100MHz clock
+	.ipReset(~ipnReset),	// Synchronous reset (active high)
+	.ipMute(ipSwitch[8]),
+	.PWM_amp(ipSwitch[7:0]),
+	.opPWM()
+	);
+
 
 // If the RAM loading and reading does not work, try a tone
 
