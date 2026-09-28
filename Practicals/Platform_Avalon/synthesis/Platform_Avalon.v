@@ -76,7 +76,15 @@ module Platform_Avalon (
 	wire         mm_interconnect_0_registers_s0_write;         // mm_interconnect_0:Registers_s0_write -> Registers:s0_write
 	wire  [31:0] mm_interconnect_0_registers_s0_writedata;     // mm_interconnect_0:Registers_s0_writedata -> Registers:s0_writedata
 	wire   [0:0] mm_interconnect_0_registers_s0_burstcount;    // mm_interconnect_0:Registers_s0_burstcount -> Registers:s0_burstcount
-	wire         rst_controller_reset_out_reset;               // rst_controller:reset_out -> [Registers:reset, SDRAM:reset, master:reset, mm_interconnect_0:JTAG_clk_reset_reset_bridge_in_reset_reset, mm_interconnect_0:master_reset_reset_bridge_in_reset_reset]
+	wire         mm_interconnect_0_ram_on_chip_s1_chipselect;  // mm_interconnect_0:RAM_On_Chip_s1_chipselect -> RAM_On_Chip:chipselect
+	wire  [15:0] mm_interconnect_0_ram_on_chip_s1_readdata;    // RAM_On_Chip:readdata -> mm_interconnect_0:RAM_On_Chip_s1_readdata
+	wire  [14:0] mm_interconnect_0_ram_on_chip_s1_address;     // mm_interconnect_0:RAM_On_Chip_s1_address -> RAM_On_Chip:address
+	wire   [1:0] mm_interconnect_0_ram_on_chip_s1_byteenable;  // mm_interconnect_0:RAM_On_Chip_s1_byteenable -> RAM_On_Chip:byteenable
+	wire         mm_interconnect_0_ram_on_chip_s1_write;       // mm_interconnect_0:RAM_On_Chip_s1_write -> RAM_On_Chip:write
+	wire  [15:0] mm_interconnect_0_ram_on_chip_s1_writedata;   // mm_interconnect_0:RAM_On_Chip_s1_writedata -> RAM_On_Chip:writedata
+	wire         mm_interconnect_0_ram_on_chip_s1_clken;       // mm_interconnect_0:RAM_On_Chip_s1_clken -> RAM_On_Chip:clken
+	wire         rst_controller_reset_out_reset;               // rst_controller:reset_out -> [RAM_On_Chip:reset, Registers:reset, SDRAM:reset, master:reset, mm_interconnect_0:JTAG_clk_reset_reset_bridge_in_reset_reset, mm_interconnect_0:master_reset_reset_bridge_in_reset_reset, rst_translator:in_reset]
+	wire         rst_controller_reset_out_reset_req;           // rst_controller:reset_req -> [RAM_On_Chip:reset_req, rst_translator:reset_req_in]
 
 	Platform_Avalon_JTAG #(
 		.USE_PLI     (0),
@@ -94,6 +102,20 @@ module Platform_Avalon (
 		.master_readdatavalid (jtag_master_readdatavalid), //             .readdatavalid
 		.master_byteenable    (jtag_master_byteenable),    //             .byteenable
 		.master_reset_reset   ()                           // master_reset.reset
+	);
+
+	Platform_Avalon_RAM_On_Chip ram_on_chip (
+		.clk        (clk_clk),                                     //   clk1.clk
+		.address    (mm_interconnect_0_ram_on_chip_s1_address),    //     s1.address
+		.clken      (mm_interconnect_0_ram_on_chip_s1_clken),      //       .clken
+		.chipselect (mm_interconnect_0_ram_on_chip_s1_chipselect), //       .chipselect
+		.write      (mm_interconnect_0_ram_on_chip_s1_write),      //       .write
+		.readdata   (mm_interconnect_0_ram_on_chip_s1_readdata),   //       .readdata
+		.writedata  (mm_interconnect_0_ram_on_chip_s1_writedata),  //       .writedata
+		.byteenable (mm_interconnect_0_ram_on_chip_s1_byteenable), //       .byteenable
+		.reset      (rst_controller_reset_out_reset),              // reset1.reset
+		.reset_req  (rst_controller_reset_out_reset_req),          //       .reset_req
+		.freeze     (1'b0)                                         // (terminated)
 	);
 
 	altera_avalon_mm_bridge #(
@@ -220,6 +242,13 @@ module Platform_Avalon (
 		.master_m0_write                            (master_m0_write),                              //                                     .write
 		.master_m0_writedata                        (master_m0_writedata),                          //                                     .writedata
 		.master_m0_debugaccess                      (master_m0_debugaccess),                        //                                     .debugaccess
+		.RAM_On_Chip_s1_address                     (mm_interconnect_0_ram_on_chip_s1_address),     //                       RAM_On_Chip_s1.address
+		.RAM_On_Chip_s1_write                       (mm_interconnect_0_ram_on_chip_s1_write),       //                                     .write
+		.RAM_On_Chip_s1_readdata                    (mm_interconnect_0_ram_on_chip_s1_readdata),    //                                     .readdata
+		.RAM_On_Chip_s1_writedata                   (mm_interconnect_0_ram_on_chip_s1_writedata),   //                                     .writedata
+		.RAM_On_Chip_s1_byteenable                  (mm_interconnect_0_ram_on_chip_s1_byteenable),  //                                     .byteenable
+		.RAM_On_Chip_s1_chipselect                  (mm_interconnect_0_ram_on_chip_s1_chipselect),  //                                     .chipselect
+		.RAM_On_Chip_s1_clken                       (mm_interconnect_0_ram_on_chip_s1_clken),       //                                     .clken
 		.Registers_s0_address                       (mm_interconnect_0_registers_s0_address),       //                         Registers_s0.address
 		.Registers_s0_write                         (mm_interconnect_0_registers_s0_write),         //                                     .write
 		.Registers_s0_read                          (mm_interconnect_0_registers_s0_read),          //                                     .read
@@ -246,7 +275,7 @@ module Platform_Avalon (
 		.NUM_RESET_INPUTS          (1),
 		.OUTPUT_RESET_SYNC_EDGES   ("deassert"),
 		.SYNC_DEPTH                (2),
-		.RESET_REQUEST_PRESENT     (0),
+		.RESET_REQUEST_PRESENT     (1),
 		.RESET_REQ_WAIT_TIME       (1),
 		.MIN_RST_ASSERTION_TIME    (3),
 		.RESET_REQ_EARLY_DSRT_TIME (1),
@@ -268,41 +297,41 @@ module Platform_Avalon (
 		.USE_RESET_REQUEST_IN15    (0),
 		.ADAPT_RESET_REQUEST       (0)
 	) rst_controller (
-		.reset_in0      (~reset_reset_n),                 // reset_in0.reset
-		.clk            (clk_clk),                        //       clk.clk
-		.reset_out      (rst_controller_reset_out_reset), // reset_out.reset
-		.reset_req      (),                               // (terminated)
-		.reset_req_in0  (1'b0),                           // (terminated)
-		.reset_in1      (1'b0),                           // (terminated)
-		.reset_req_in1  (1'b0),                           // (terminated)
-		.reset_in2      (1'b0),                           // (terminated)
-		.reset_req_in2  (1'b0),                           // (terminated)
-		.reset_in3      (1'b0),                           // (terminated)
-		.reset_req_in3  (1'b0),                           // (terminated)
-		.reset_in4      (1'b0),                           // (terminated)
-		.reset_req_in4  (1'b0),                           // (terminated)
-		.reset_in5      (1'b0),                           // (terminated)
-		.reset_req_in5  (1'b0),                           // (terminated)
-		.reset_in6      (1'b0),                           // (terminated)
-		.reset_req_in6  (1'b0),                           // (terminated)
-		.reset_in7      (1'b0),                           // (terminated)
-		.reset_req_in7  (1'b0),                           // (terminated)
-		.reset_in8      (1'b0),                           // (terminated)
-		.reset_req_in8  (1'b0),                           // (terminated)
-		.reset_in9      (1'b0),                           // (terminated)
-		.reset_req_in9  (1'b0),                           // (terminated)
-		.reset_in10     (1'b0),                           // (terminated)
-		.reset_req_in10 (1'b0),                           // (terminated)
-		.reset_in11     (1'b0),                           // (terminated)
-		.reset_req_in11 (1'b0),                           // (terminated)
-		.reset_in12     (1'b0),                           // (terminated)
-		.reset_req_in12 (1'b0),                           // (terminated)
-		.reset_in13     (1'b0),                           // (terminated)
-		.reset_req_in13 (1'b0),                           // (terminated)
-		.reset_in14     (1'b0),                           // (terminated)
-		.reset_req_in14 (1'b0),                           // (terminated)
-		.reset_in15     (1'b0),                           // (terminated)
-		.reset_req_in15 (1'b0)                            // (terminated)
+		.reset_in0      (~reset_reset_n),                     // reset_in0.reset
+		.clk            (clk_clk),                            //       clk.clk
+		.reset_out      (rst_controller_reset_out_reset),     // reset_out.reset
+		.reset_req      (rst_controller_reset_out_reset_req), //          .reset_req
+		.reset_req_in0  (1'b0),                               // (terminated)
+		.reset_in1      (1'b0),                               // (terminated)
+		.reset_req_in1  (1'b0),                               // (terminated)
+		.reset_in2      (1'b0),                               // (terminated)
+		.reset_req_in2  (1'b0),                               // (terminated)
+		.reset_in3      (1'b0),                               // (terminated)
+		.reset_req_in3  (1'b0),                               // (terminated)
+		.reset_in4      (1'b0),                               // (terminated)
+		.reset_req_in4  (1'b0),                               // (terminated)
+		.reset_in5      (1'b0),                               // (terminated)
+		.reset_req_in5  (1'b0),                               // (terminated)
+		.reset_in6      (1'b0),                               // (terminated)
+		.reset_req_in6  (1'b0),                               // (terminated)
+		.reset_in7      (1'b0),                               // (terminated)
+		.reset_req_in7  (1'b0),                               // (terminated)
+		.reset_in8      (1'b0),                               // (terminated)
+		.reset_req_in8  (1'b0),                               // (terminated)
+		.reset_in9      (1'b0),                               // (terminated)
+		.reset_req_in9  (1'b0),                               // (terminated)
+		.reset_in10     (1'b0),                               // (terminated)
+		.reset_req_in10 (1'b0),                               // (terminated)
+		.reset_in11     (1'b0),                               // (terminated)
+		.reset_req_in11 (1'b0),                               // (terminated)
+		.reset_in12     (1'b0),                               // (terminated)
+		.reset_req_in12 (1'b0),                               // (terminated)
+		.reset_in13     (1'b0),                               // (terminated)
+		.reset_req_in13 (1'b0),                               // (terminated)
+		.reset_in14     (1'b0),                               // (terminated)
+		.reset_req_in14 (1'b0),                               // (terminated)
+		.reset_in15     (1'b0),                               // (terminated)
+		.reset_req_in15 (1'b0)                                // (terminated)
 	);
 
 endmodule

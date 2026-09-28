@@ -42,12 +42,12 @@
 
 `timescale 1 ns / 1 ns
 
-module Platform_Avalon_mm_interconnect_0_router_003_default_decode
+module Platform_Avalon_mm_interconnect_0_router_001_default_decode
   #(
      parameter DEFAULT_CHANNEL = 0,
                DEFAULT_WR_CHANNEL = -1,
                DEFAULT_RD_CHANNEL = -1,
-               DEFAULT_DESTID = 1 
+               DEFAULT_DESTID = 2 
    )
   (output [90 - 89 : 0] default_destination_id,
    output [3-1 : 0] default_wr_channel,
@@ -81,7 +81,7 @@ module Platform_Avalon_mm_interconnect_0_router_003_default_decode
 endmodule
 
 
-module Platform_Avalon_mm_interconnect_0_router_003
+module Platform_Avalon_mm_interconnect_0_router_001
 (
     // -------------------
     // Clock & Reset
@@ -120,7 +120,7 @@ module Platform_Avalon_mm_interconnect_0_router_003
     localparam PKT_PROTECTION_L = 92;
     localparam ST_DATA_W = 104;
     localparam ST_CHANNEL_W = 3;
-    localparam DECODER_TYPE = 1;
+    localparam DECODER_TYPE = 0;
 
     localparam PKT_TRANS_WRITE = 70;
     localparam PKT_TRANS_READ  = 71;
@@ -134,22 +134,29 @@ module Platform_Avalon_mm_interconnect_0_router_003
     // Figure out the number of bits to mask off for each slave span
     // during address decoding
     // -------------------------------------------------------
+    localparam PAD0 = log2ceil(64'h4000000 - 64'h0); 
+    localparam PAD1 = log2ceil(64'h4010000 - 64'h4000000); 
+    localparam PAD2 = log2ceil(64'h4010400 - 64'h4010000); 
     // -------------------------------------------------------
     // Work out which address bits are significant based on the
     // address range of the slaves. If the required width is too
     // large or too small, we use the address field width instead.
     // -------------------------------------------------------
-    localparam ADDR_RANGE = 64'h0;
+    localparam ADDR_RANGE = 64'h4010400;
     localparam RANGE_ADDR_WIDTH = log2ceil(ADDR_RANGE);
     localparam OPTIMIZED_ADDR_H = (RANGE_ADDR_WIDTH > PKT_ADDR_W) ||
                                   (RANGE_ADDR_WIDTH == 0) ?
                                         PKT_ADDR_H :
                                         PKT_ADDR_L + RANGE_ADDR_WIDTH - 1;
 
-    localparam RG = RANGE_ADDR_WIDTH;
+    localparam RG = RANGE_ADDR_WIDTH-1;
     localparam REAL_ADDRESS_RANGE = OPTIMIZED_ADDR_H - PKT_ADDR_L;
 
-    reg [PKT_DEST_ID_W-1 : 0] destid;
+      reg [PKT_ADDR_W-1 : 0] address;
+      always @* begin
+        address = {PKT_ADDR_W{1'b0}};
+        address [REAL_ADDRESS_RANGE:0] = sink_data[OPTIMIZED_ADDR_H : PKT_ADDR_L];
+      end   
 
     // -------------------------------------------------------
     // Pass almost everything through, untouched
@@ -158,6 +165,7 @@ module Platform_Avalon_mm_interconnect_0_router_003
     assign src_valid         = sink_valid;
     assign src_startofpacket = sink_startofpacket;
     assign src_endofpacket   = sink_endofpacket;
+    wire [PKT_DEST_ID_W-1:0] default_destid;
     wire [3-1 : 0] default_src_channel;
 
 
@@ -165,8 +173,8 @@ module Platform_Avalon_mm_interconnect_0_router_003
 
 
 
-    Platform_Avalon_mm_interconnect_0_router_003_default_decode the_default_decode(
-      .default_destination_id (),
+    Platform_Avalon_mm_interconnect_0_router_001_default_decode the_default_decode(
+      .default_destination_id (default_destid),
       .default_wr_channel   (),
       .default_rd_channel   (),
       .default_src_channel  (default_src_channel)
@@ -175,23 +183,30 @@ module Platform_Avalon_mm_interconnect_0_router_003
     always @* begin
         src_data    = sink_data;
         src_channel = default_src_channel;
+        src_data[PKT_DEST_ID_H:PKT_DEST_ID_L] = default_destid;
 
         // --------------------------------------------------
-        // DestinationID Decoder
-        // Sets the channel based on the destination ID.
+        // Address Decoder
+        // Sets the channel and destination ID based on the address
         // --------------------------------------------------
-        destid      = sink_data[PKT_DEST_ID_H : PKT_DEST_ID_L];
 
+    // ( 0x0 .. 0x4000000 )
+    if ( {address[RG:PAD0],{PAD0{1'b0}}} == 27'h0   ) begin
+            src_channel = 3'b001;
+            src_data[PKT_DEST_ID_H:PKT_DEST_ID_L] = 2;
+    end
 
+    // ( 0x4000000 .. 0x4010000 )
+    if ( {address[RG:PAD1],{PAD1{1'b0}}} == 27'h4000000   ) begin
+            src_channel = 3'b100;
+            src_data[PKT_DEST_ID_H:PKT_DEST_ID_L] = 0;
+    end
 
-        if (destid == 1 ) begin
-            src_channel = 3'b01;
-        end
-
-        if (destid == 0 ) begin
-            src_channel = 3'b10;
-        end
-
+    // ( 0x4010000 .. 0x4010400 )
+    if ( {address[RG:PAD2],{PAD2{1'b0}}} == 27'h4010000   ) begin
+            src_channel = 3'b010;
+            src_data[PKT_DEST_ID_H:PKT_DEST_ID_L] = 1;
+    end
 
 end
 

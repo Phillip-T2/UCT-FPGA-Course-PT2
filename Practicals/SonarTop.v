@@ -24,8 +24,13 @@ module SonarTop(
 	output [ 1:0]opSDRAM_DQM,
 	inout  [15:0]bpSDRAM_DQ,
 
-	output reg [15:0]opReadData
+	output reg [15:0]opReadData,
+	
+	// PWM Audio output
+	output		opPWM
 );
+
+
 
 // Sources and Probes .........................................................
 //wire [9:0]Source;
@@ -266,6 +271,21 @@ always @(posedge Clk_100M) begin
   endcase
   Registers_ReadDataValid <= Registers_Read;
 end
+
+// PWM Module .................................................................
+//PWM_module PWM_inst(
+//	.ipClk(Clk_100M),	// Assume this is 100MHz clock
+//	.ipReset(~ipnReset),	// Synchronous reset (active high)
+//	.ipMute(ipSwitch[8]),
+//	.PWM_amp(ipSwitch[7:0]),
+//	.opPWM()
+//	);
+//
+
+// If the RAM loading and reading does not work, try a tone
+
+
+
 
 
 endmodule

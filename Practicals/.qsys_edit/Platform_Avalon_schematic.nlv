@@ -16,12 +16,13 @@ preplace inst Platform_Avalon.JTAG.timing_adt -pg 1
 preplace inst Platform_Avalon.JTAG -pg 1 -lvl 2 -y 90
 preplace inst Platform_Avalon.JTAG.b2p_adapter -pg 1
 preplace inst Platform_Avalon.JTAG.p2b -pg 1
-preplace netloc INTERCONNECT<net_container>Platform_Avalon</net_container>(MASTER)JTAG.master,(SLAVE)Registers.s0,(SLAVE)SDRAM.s0,(MASTER)master.m0) 1 2 1 540
-preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(MASTER)Registers.m0,(MASTER)Platform_Avalon.registers) 1 3 1 N
-preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(SLAVE)Platform_Avalon.master,(SLAVE)master.s0) 1 0 2 NJ 230 NJ
-preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(SLAVE)clk_0.clk_in,(SLAVE)Platform_Avalon.clk) 1 0 1 NJ
-preplace netloc FAN_OUT<net_container>Platform_Avalon</net_container>(SLAVE)JTAG.clk,(SLAVE)SDRAM.clk,(SLAVE)master.clk,(MASTER)clk_0.clk,(SLAVE)Registers.clk) 1 1 2 260 30 560
-preplace netloc FAN_OUT<net_container>Platform_Avalon</net_container>(SLAVE)master.reset,(SLAVE)JTAG.clk_reset,(SLAVE)SDRAM.reset,(MASTER)clk_0.clk_reset,(SLAVE)Registers.reset) 1 1 2 280 50 520
+preplace netloc FAN_OUT<net_container>Platform_Avalon</net_container>(SLAVE)JTAG.clk,(SLAVE)Registers.clk,(MASTER)clk_0.clk,(SLAVE)SDRAM.clk,(SLAVE)master.clk) 1 1 2 260 30 560
+preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(MASTER)Platform_Avalon.registers,(MASTER)Registers.m0) 1 3 1 NJ
+preplace netloc FAN_OUT<net_container>Platform_Avalon</net_container>(SLAVE)JTAG.clk_reset,(SLAVE)Registers.reset,(SLAVE)master.reset,(MASTER)clk_0.clk_reset,(SLAVE)SDRAM.reset) 1 1 2 280 50 520
+preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(MASTER)Platform_Avalon.sdram,(MASTER)SDRAM.m0) 1 3 1 NJ
+preplace netloc INTERCONNECT<net_container>Platform_Avalon</net_container>(MASTER)master.m0,(SLAVE)Registers.s0,(SLAVE)SDRAM.s0,(MASTER)JTAG.master) 1 2 1 540
 preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(SLAVE)clk_0.clk_in_reset,(SLAVE)Platform_Avalon.reset) 1 0 1 NJ
+preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(SLAVE)master.s0,(SLAVE)Platform_Avalon.master) 1 0 2 NJ 230 NJ
+preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(SLAVE)Platform_Avalon.clk,(SLAVE)clk_0.clk_in) 1 0 1 NJ
 levelinfo -pg 1 0 50 770
 levelinfo -hier Platform_Avalon 60 90 360 590 680

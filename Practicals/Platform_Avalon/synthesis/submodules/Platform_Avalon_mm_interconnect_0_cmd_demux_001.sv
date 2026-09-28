@@ -27,10 +27,10 @@
 
 // ------------------------------------------
 // Generation parameters:
-//   output_name:         Platform_Avalon_mm_interconnect_0_cmd_demux
+//   output_name:         Platform_Avalon_mm_interconnect_0_cmd_demux_001
 //   ST_DATA_W:           104
 //   ST_CHANNEL_W:        3
-//   NUM_OUTPUTS:         2
+//   NUM_OUTPUTS:         3
 //   VALID_WIDTH:         3
 // ------------------------------------------
 
@@ -40,7 +40,7 @@
 // 15610 - Warning: Design contains x input pin(s) that do not drive logic
 //------------------------------------------
 
-module Platform_Avalon_mm_interconnect_0_cmd_demux
+module Platform_Avalon_mm_interconnect_0_cmd_demux_001
 (
     // -------------------
     // Sink
@@ -69,6 +69,13 @@ module Platform_Avalon_mm_interconnect_0_cmd_demux
     output reg                      src1_endofpacket,
     input                           src1_ready,
 
+    output reg                      src2_valid,
+    output reg [104-1    : 0] src2_data, // ST_DATA_W=104
+    output reg [3-1 : 0] src2_channel, // ST_CHANNEL_W=3
+    output reg                      src2_startofpacket,
+    output reg                      src2_endofpacket,
+    input                           src2_ready,
+
 
     // -------------------
     // Clock & Reset
@@ -80,7 +87,7 @@ module Platform_Avalon_mm_interconnect_0_cmd_demux
 
 );
 
-    localparam NUM_OUTPUTS = 2;
+    localparam NUM_OUTPUTS = 3;
     wire [NUM_OUTPUTS - 1 : 0] ready_vector;
 
     // -------------------
@@ -101,6 +108,13 @@ module Platform_Avalon_mm_interconnect_0_cmd_demux
 
         src1_valid         = sink_channel[1] && sink_valid[1];
 
+        src2_data          = sink_data;
+        src2_startofpacket = sink_startofpacket;
+        src2_endofpacket   = sink_endofpacket;
+        src2_channel       = sink_channel >> NUM_OUTPUTS;
+
+        src2_valid         = sink_channel[2] && sink_valid[2];
+
     end
 
     // -------------------
@@ -108,8 +122,9 @@ module Platform_Avalon_mm_interconnect_0_cmd_demux
     // -------------------
     assign ready_vector[0] = src0_ready;
     assign ready_vector[1] = src1_ready;
+    assign ready_vector[2] = src2_ready;
 
-    assign sink_ready = |(sink_channel & {{1{1'b0}},{ready_vector[NUM_OUTPUTS - 1 : 0]}});
+    assign sink_ready = |(sink_channel & ready_vector);
 
 endmodule
 

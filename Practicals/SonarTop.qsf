@@ -343,5 +343,8 @@ set_global_assignment -name VERILOG_FILE SonarTop.v
 set_global_assignment -name SDC_FILE SonarPT2.sdc
 set_global_assignment -name QIP_FILE SDRAM_PLL.qip
 set_global_assignment -name SIGNALTAP_FILE stp5.stp
+set_global_assignment -name VERILOG_FILE PWM_module.v
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name SLD_FILE db/stp5_auto_stripped.stp
+set_location_assignment PIN_W9 -to opPWM
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to opPWM
