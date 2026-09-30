@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module SonarTop(
 	// Switches and LEDs .......................................................
 	input		[9:0]ipSwitch,
@@ -27,7 +29,8 @@ module SonarTop(
 	output reg [15:0]opReadData,
 	
 	// PWM Audio output
-	output		opPWM
+	output reg		  	opPWM,
+	output reg			opPA_en
 );
 
 
@@ -248,38 +251,77 @@ Platform_Avalon QSys_Inst (
 
 assign Registers_WaitRequest = 0;
 
-always @(posedge Clk_100M) begin
-  if(Reset) begin
-    opLED <= 0;
+//always @(posedge Clk_100M) begin
+//  if(Reset) begin
+//    opLED <= 0;
+//
+//  end else if(Registers_Write) begin
+//    case(Registers_Address)
+//      8'h01: begin
+//        if(Registers_ByteEnable[0]) opLED[7:0] <= Registers_WriteData[7:0];
+//        if(Registers_ByteEnable[1]) opLED[9:8] <= Registers_WriteData[9:8];
+//      end
+//    endcase
+//  end
+//
+//  case(Registers_Address)
+//    8'h00: Registers_ReadData <= ipSwitch;
+//    8'h01: Registers_ReadData <= opLED;
+//
+//    8'h10: Registers_ReadData <= { {16{G_Sensor_X[15]}}, G_Sensor_X };
+//    8'h11: Registers_ReadData <= { {16{G_Sensor_Y[15]}}, G_Sensor_Y };
+//    8'h12: Registers_ReadData <= { {16{G_Sensor_Z[15]}}, G_Sensor_Z };
+//  endcase
+//  Registers_ReadDataValid <= Registers_Read;
+//end
 
-  end else if(Registers_Write) begin
-    case(Registers_Address)
-      8'h01: begin
-        if(Registers_ByteEnable[0]) opLED[7:0] <= Registers_WriteData[7:0];
-        if(Registers_ByteEnable[1]) opLED[9:8] <= Registers_WriteData[9:8];
-      end
-    endcase
-  end
+// Attempte to generate a tone
 
-  case(Registers_Address)
-    8'h00: Registers_ReadData <= ipSwitch;
-    8'h01: Registers_ReadData <= opLED;
+	parameter CLK_DIV_TARGET = 191109;
+    
+   reg [17:0] clk_divider;
+   reg        tone_state;
 
-    8'h10: Registers_ReadData <= { {16{G_Sensor_X[15]}}, G_Sensor_X };
-    8'h11: Registers_ReadData <= { {16{G_Sensor_Y[15]}}, G_Sensor_Y };
-    8'h12: Registers_ReadData <= { {16{G_Sensor_Z[15]}}, G_Sensor_Z };
-  endcase
-  Registers_ReadDataValid <= Registers_Read;
-end
+   always @(posedge Clk_100M or negedge ipnReset) begin
+       if (!ipnReset) begin
+           clk_divider <= 0;
+           tone_state  <= 1'b0;
+       end else if (clk_divider >= (CLK_DIV_TARGET - 1)) begin
+           clk_divider <= 0;
+           tone_state  <= ~tone_state; // Toggle at 523.26 Hz
+       end else begin
+           clk_divider <= clk_divider + 1'b1;
+       end
+   end
+
+   // --- 2. Duty Cycle Selection ---
+   wire [7:0] duty_cycle;
+   
+	assign opPA_en = ipSwitch[0];
+   assign duty_cycle = tone_state ? 8'd128 : 8'd0;
+	
+
+   // --- 3. Instantiate the PWM Generator ---
+   PWM_module #(.Width(8)) PWM_inst (
+       .ipClk(Clk_100M),
+       .ipReset(~ipnReset),
+       .ipDuty_Cycle(duty_cycle),
+       .opPWM(opPWM) // Connected directly to top level output port
+   );
+
 
 // PWM Module .................................................................
-PWM_module PWM_inst(
-	.ipClk(Clk_100M),	// Assume this is 100MHz clock
-	.ipReset(~ipnReset),	// Synchronous reset (active high)
-	.ipMute(ipSwitch[8]),
-	.PWM_amp(ipSwitch[7:0]),
-	.opPWM()
-	);
+//PWM_module PWM_inst(
+//	.ipClk(Clk_100M),	// Assume this is 100MHz clock
+//	.ipReset(~ipnReset),	// Synchronous reset (active high)
+//	.PWM_amp(ipSwitch[8:1]),
+//	.opPWM(opLED[9])
+//	);
+
+
+	assign opLED = ipSwitch;  // XOR between Switch state and Source
+
+
 
 
 // If the RAM loading and reading does not work, try a tone

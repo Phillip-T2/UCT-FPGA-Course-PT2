@@ -2,27 +2,28 @@
 # 
 preplace inst Platform_Avalon.master -pg 1 -lvl 2 -y 180
 preplace inst Platform_Avalon.clk_0 -pg 1 -lvl 1 -y 90
-preplace inst Platform_Avalon.Registers -pg 1 -lvl 3 -y 50
+preplace inst Platform_Avalon.Registers -pg 1 -lvl 3 -y 30
 preplace inst Platform_Avalon.JTAG.transacto -pg 1
 preplace inst Platform_Avalon -pg 1 -lvl 1 -y 40 -regy -20
 preplace inst Platform_Avalon.JTAG.b2p -pg 1
 preplace inst Platform_Avalon.JTAG.jtag_phy_embedded_in_jtag_master -pg 1
 preplace inst Platform_Avalon.JTAG.clk_src -pg 1
 preplace inst Platform_Avalon.JTAG.clk_rst -pg 1
-preplace inst Platform_Avalon.SDRAM -pg 1 -lvl 3 -y 130
+preplace inst Platform_Avalon.RAM_On_Chip -pg 1 -lvl 3 -y 110
+preplace inst Platform_Avalon.SDRAM -pg 1 -lvl 3 -y 190
 preplace inst Platform_Avalon.JTAG.p2b_adapter -pg 1
 preplace inst Platform_Avalon.JTAG.fifo -pg 1
 preplace inst Platform_Avalon.JTAG.timing_adt -pg 1
 preplace inst Platform_Avalon.JTAG -pg 1 -lvl 2 -y 90
 preplace inst Platform_Avalon.JTAG.b2p_adapter -pg 1
 preplace inst Platform_Avalon.JTAG.p2b -pg 1
-preplace netloc FAN_OUT<net_container>Platform_Avalon</net_container>(SLAVE)JTAG.clk,(SLAVE)Registers.clk,(MASTER)clk_0.clk,(SLAVE)SDRAM.clk,(SLAVE)master.clk) 1 1 2 260 30 560
+preplace netloc FAN_OUT<net_container>Platform_Avalon</net_container>(MASTER)clk_0.clk_reset,(SLAVE)JTAG.clk_reset,(SLAVE)Registers.reset,(SLAVE)master.reset,(SLAVE)RAM_On_Chip.reset1,(SLAVE)SDRAM.reset) 1 1 2 280 50 540
+preplace netloc INTERCONNECT<net_container>Platform_Avalon</net_container>(SLAVE)Registers.s0,(MASTER)JTAG.master,(SLAVE)RAM_On_Chip.s1,(MASTER)master.m0,(SLAVE)SDRAM.s0) 1 2 1 520
+preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(SLAVE)Platform_Avalon.master,(SLAVE)master.s0) 1 0 2 NJ 230 NJ
 preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(MASTER)Platform_Avalon.registers,(MASTER)Registers.m0) 1 3 1 NJ
-preplace netloc FAN_OUT<net_container>Platform_Avalon</net_container>(SLAVE)JTAG.clk_reset,(SLAVE)Registers.reset,(SLAVE)master.reset,(MASTER)clk_0.clk_reset,(SLAVE)SDRAM.reset) 1 1 2 280 50 520
 preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(MASTER)Platform_Avalon.sdram,(MASTER)SDRAM.m0) 1 3 1 NJ
-preplace netloc INTERCONNECT<net_container>Platform_Avalon</net_container>(MASTER)master.m0,(SLAVE)Registers.s0,(SLAVE)SDRAM.s0,(MASTER)JTAG.master) 1 2 1 540
+preplace netloc FAN_OUT<net_container>Platform_Avalon</net_container>(SLAVE)SDRAM.clk,(SLAVE)Registers.clk,(SLAVE)JTAG.clk,(SLAVE)RAM_On_Chip.clk1,(MASTER)clk_0.clk,(SLAVE)master.clk) 1 1 2 260 30 560
 preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(SLAVE)clk_0.clk_in_reset,(SLAVE)Platform_Avalon.reset) 1 0 1 NJ
-preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(SLAVE)master.s0,(SLAVE)Platform_Avalon.master) 1 0 2 NJ 230 NJ
 preplace netloc EXPORT<net_container>Platform_Avalon</net_container>(SLAVE)Platform_Avalon.clk,(SLAVE)clk_0.clk_in) 1 0 1 NJ
 levelinfo -pg 1 0 50 770
 levelinfo -hier Platform_Avalon 60 90 360 590 680
