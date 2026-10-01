@@ -1,0 +1,40 @@
+# system info DDC_NCO on 2026.10.01.10:02:35
+system_info:
+name,value
+DEVICE,10M50DAF484C7G
+DEVICE_FAMILY,MAX 10
+GENERATION_ID,1790841753
+#
+#
+# Files generated for DDC_NCO on 2026.10.01.10:02:35
+files:
+filepath,kind,attributes,module,is_top
+simulation/DDC_NCO.v,VERILOG,,DDC_NCO,true
+simulation/submodules/mentor/asj_nco_mob_rw.v,VERILOG_ENCRYPT,MENTOR_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/aldec/asj_nco_mob_rw.v,VERILOG_ENCRYPT,ALDEC_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/mentor/asj_nco_isdr.v,VERILOG_ENCRYPT,MENTOR_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/aldec/asj_nco_isdr.v,VERILOG_ENCRYPT,ALDEC_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/mentor/asj_nco_apr_dxx.v,VERILOG_ENCRYPT,MENTOR_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/aldec/asj_nco_apr_dxx.v,VERILOG_ENCRYPT,ALDEC_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/mentor/asj_dxx_g.v,VERILOG_ENCRYPT,MENTOR_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/aldec/asj_dxx_g.v,VERILOG_ENCRYPT,ALDEC_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/mentor/asj_dxx.v,VERILOG_ENCRYPT,MENTOR_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/aldec/asj_dxx.v,VERILOG_ENCRYPT,ALDEC_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/mentor/asj_gal.v,VERILOG_ENCRYPT,MENTOR_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/aldec/asj_gal.v,VERILOG_ENCRYPT,ALDEC_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/mentor/asj_nco_as_m_cen.v,VERILOG_ENCRYPT,MENTOR_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/aldec/asj_nco_as_m_cen.v,VERILOG_ENCRYPT,ALDEC_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/mentor/asj_altqmcpipe.v,VERILOG_ENCRYPT,MENTOR_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/aldec/asj_altqmcpipe.v,VERILOG_ENCRYPT,ALDEC_SPECIFIC,DDC_NCO_nco_ii_0,false
+simulation/submodules/DDC_NCO_nco_ii_0_sin.hex,HEX,,DDC_NCO_nco_ii_0,false
+simulation/submodules/DDC_NCO_nco_ii_0_cos.hex,HEX,,DDC_NCO_nco_ii_0,false
+simulation/submodules/DDC_NCO_nco_ii_0.v,VERILOG,,DDC_NCO_nco_ii_0,false
+simulation/submodules/DDC_NCO_nco_ii_0_tb.vhd,OTHER,,DDC_NCO_nco_ii_0,false
+simulation/submodules/c_model/model_wrapper.cpp,OTHER,,DDC_NCO_nco_ii_0,false
+simulation/submodules/c_model/nco_model.cpp,OTHER,,DDC_NCO_nco_ii_0,false
+simulation/submodules/c_model/nco_model.h,OTHER,,DDC_NCO_nco_ii_0,false
+#
+# Map from instance-path to kind of module
+instances:
+instancePath,module
+DDC_NCO.nco_ii_0,DDC_NCO_nco_ii_0
