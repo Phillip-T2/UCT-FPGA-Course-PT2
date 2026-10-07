@@ -374,3 +374,4 @@ set_global_assignment -name SDC_FILE SonarPT2.sdc
 set_global_assignment -name QIP_FILE SDRAM_PLL.qip
 set_global_assignment -name SIGNALTAP_FILE stp5.stp
 set_global_assignment -name VERILOG_FILE PWM_module.v
+set_global_assignment -name SLD_FILE db/stp5_auto_stripped.stp
