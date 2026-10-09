@@ -1,5 +1,3 @@
-`timescale 1ns / 1ps
-
 module SonarTop(
 	// Switches and LEDs .......................................................
 	input		[9:0]ipSwitch,
@@ -30,9 +28,20 @@ module SonarTop(
 	
 	// PWM Audio output
 	output reg		  	opPWM,
-	output reg			opPA_en
+	output reg			opPA_en,
+	// ToDo: Drop the "reg"?
+	
+	// ADC
+	output [ 2:1]opADC_nCS,			// Chip Select (two ADC on Sonar PCB)
+	inout  [ 3:0]bpADC_CR_DB,		// Configuration Register (CR0-CR3),
+											// with pin sharing DB0/CR2 DB1/CR3; 
+	output		 opADC_nWR,			// Write
+	output		 opADC_nRD,			// Read
+	output		 opADC_CONVST,		// Convert Start
+	input  [ 2:1]ipADC_nEOC,		// End of Conversion
+	input  [13:2]ipADC_DB			// Data Bus; not including DB1/CR3 and DB0/CR2
 );
-
+//.............................................................................
 
 
 // Sources and Probes .........................................................
@@ -70,20 +79,21 @@ ADXL345 #(
 
 //-----------------------------------------------------------------------------
 
-wire [1:0]G_Sensor_Select;
+//wire [1:0]G_Sensor_Select;
+//
+//altsource_probe #(
+//  .instance_id            ("GSNS"),
+//  .sld_auto_instance_index("YES"),
+//  .probe_width            (16),
+//  .source_width           ( 2)
+//)SourcesAndProbes_G_Sensor(
+//  .source_ena(1'b1),
+//  .source    (G_Sensor_Select),
+//  .probe     (G_Sensor_Select == 0 ? G_Sensor_X :
+//              G_Sensor_Select == 1 ? G_Sensor_Y :
+//              G_Sensor_Select == 2 ? G_Sensor_Z : 0)
+//);
 
-altsource_probe #(
-  .instance_id            ("GSNS"),
-  .sld_auto_instance_index("YES"),
-  .probe_width            (16),
-  .source_width           ( 2)
-)SourcesAndProbes_G_Sensor(
-  .source_ena(1'b1),
-  .source    (G_Sensor_Select),
-  .probe     (G_Sensor_Select == 0 ? G_Sensor_X :
-              G_Sensor_Select == 1 ? G_Sensor_Y :
-              G_Sensor_Select == 2 ? G_Sensor_Z : 0)
-);
 // SDRAM Clocks, 100MHz with 0 and -90deg phase -------------------------------
 
 wire Clk_100M;
@@ -100,7 +110,34 @@ SDRAM_PLL SDRAM_PLL_Inst(
 reg Reset;
 always @(posedge Clk_100M) Reset <= ~PLL_Locked || ~ipnReset;
 
-// SDRAM on Avalon Bridge -----------------------------------------------------
+wire [29:0]Master_Address;
+wire [ 3:0]Master_ByteEnable;
+wire       Master_WaitRequest;
+wire [31:0]Master_WriteData;
+wire       Master_Write = 0;
+wire       Master_Read  = 0;
+wire [31:0]Master_ReadData;
+wire       Master_ReadDataValid;
+
+wire [ 7:0]Registers_Address;
+wire [ 3:0]Registers_ByteEnable;
+wire       Registers_WaitRequest;
+wire [31:0]Registers_WriteData;
+wire       Registers_Write;
+wire       Registers_Read;
+wire [31:0]Registers_ReadData;
+wire       Registers_ReadDataValid;
+
+wire [24:0]SDRAM_Address;
+wire [ 1:0]SDRAM_ByteEnable;
+wire       SDRAM_WaitRequest;
+wire [15:0]SDRAM_WriteData;
+wire       SDRAM_Write;
+wire       SDRAM_Read;
+wire [15:0]SDRAM_ReadData;
+wire       SDRAM_ReadDataValid;
+
+// SDRAM on Avalon Bridge connect and intialise -------------------------------
 
 wire [24:0]Avalon_Address;
 wire       Avalon_WaitRequest;
@@ -137,77 +174,102 @@ IS42S16320D SDRAM_Inst(
   .opDQM          (opSDRAM_DQM ),
   .bpDQ           (bpSDRAM_DQ  )
 );
-//------------------------------------------------------------------------------
 
-typedef enum { Write, Read, Done } STATE;
+// SDRAM state machine --------------------------------------------------------
+// Read when ADC samples are ready, write with JTAG request
+
+// Internal counters and registers
+reg [3:0]  sample_idx;
+reg [24:0] current_addr; // Persistent address tracker across ADC blocks
+
+typedef enum { IDLE_WAIT_ADC, Write_Block, Read_All, Done } STATE;
 STATE State;
 
 always @(posedge Clk_100M) begin
   if(Reset) begin
+    current_addr     <= 0;
     Avalon_Address   <= 0;
     Avalon_WriteData <= 0;
     Avalon_Write     <= 0;
     Avalon_Read      <= 0;
+    sample_idx       <= 0;
 
-    State <= Write;
+    State <= IDLE_WAIT_ADC;
 
-  end else if(~Avalon_WaitRequest) begin
+  end else begin
     case(State)
-      Write: begin
-        if(Avalon_Address == 25'h1FF_FFFE) State <= Read;
-        if(Avalon_Write) begin
-          Avalon_Address   <= Avalon_Address + 1;
-          Avalon_WriteData <= Avalon_Address[15:0] + 1;
+      
+      // 1. Wait for individual 16-sample ADC blocks until SDRAM is full
+      IDLE_WAIT_ADC: begin
+        Avalon_Write <= 1'b0;
+        
+        if(ADC_Valid) begin
+          sample_idx     <= 4'd0;
+          Avalon_Address <= current_addr; // Resume writing from where we left off
+          State          <= Write_Block;
         end
-        Avalon_Write <= 1;
       end
 
-      Read: begin
-        Avalon_Write <= 0;
-        if(Avalon_Address == 25'h1FF_FFFE) State <= Done;
-        Avalon_Address <= Avalon_Address + 1;
-        Avalon_Read <= 1;
+      // 2. Burst-write the 16 samples into the current segment of SDRAM
+      Write_Block: begin
+        if(~Avalon_WaitRequest) begin
+          Avalon_WriteData <= {2'b00, ADC_Samples[sample_idx]};
+          Avalon_Write     <= 1'b1;
+
+          if(Avalon_Write) begin
+            // If we have written all 16 samples in this block
+            if(sample_idx == 4'd15) begin
+              Avalon_Write <= 1'b0;
+              
+              // CRITICAL: Check if this was the final block filling the SDRAM
+              if(Avalon_Address == 25'h1FF_FFFE) begin
+                Avalon_Address <= 25'd0; // Reset address pointer to 0 for the upcoming Read Phase
+                State          <= Read_All; 
+              end else begin
+                current_addr   <= Avalon_Address + 1'b1; // Save progress for next block
+                State          <= IDLE_WAIT_ADC;
+              end
+            end else begin
+              Avalon_Address <= Avalon_Address + 1'b1;
+              sample_idx     <= sample_idx + 1'b1;
+            end
+          end
+        end
       end
 
+      // 3. SDRAM is completely full! Now continuously read it all back out for JTAG
+      Read_All: begin
+        if(~Avalon_WaitRequest) begin
+          Avalon_Read <= 1'b1;
+          
+          if(Avalon_Read) begin
+            if(Avalon_Address == 25'h1FF_FFFE) begin
+              State       <= Done;
+              Avalon_Read <= 1'b0;
+            end else begin
+              Avalon_Address <= Avalon_Address + 1'b1;
+            end
+          end
+        end
+      end
+
+      // 4. Lock state to protect data from being overwritten until a hardware Reset
       Done: begin
-        Avalon_Read  <= 0;
-        Avalon_Write <= 0;
+        Avalon_Read  <= 1'b0;
+        Avalon_Write <= 1'b1; // Explicitly ensure writing is locked out
       end
 
-      default:;
+      default: State <= IDLE_WAIT_ADC;
     endcase
   end
 
+  // Capture read data whenever the Avalon bus says it's ready
   if(Avalon_ReadDataValid) opReadData <= Avalon_ReadData;
 end
+
 //------------------------------------------------------------------------------
 
-wire [29:0]Master_Address;
-wire [ 3:0]Master_ByteEnable;
-wire       Master_WaitRequest;
-wire [31:0]Master_WriteData;
-wire       Master_Write = 0;
-wire       Master_Read  = 0;
-wire [31:0]Master_ReadData;
-wire       Master_ReadDataValid;
 
-wire [ 7:0]Registers_Address;
-wire [ 3:0]Registers_ByteEnable;
-wire       Registers_WaitRequest;
-wire [31:0]Registers_WriteData;
-wire       Registers_Write;
-wire       Registers_Read;
-wire [31:0]Registers_ReadData;
-wire       Registers_ReadDataValid;
-
-wire [24:0]SDRAM_Address;
-wire [ 1:0]SDRAM_ByteEnable;
-wire       SDRAM_WaitRequest;
-wire [15:0]SDRAM_WriteData;
-wire       SDRAM_Write;
-wire       SDRAM_Read;
-wire [15:0]SDRAM_ReadData;
-wire       SDRAM_ReadDataValid;
 
 Platform_Avalon QSys_Inst (
   .clk_clk                (Clk_100M               ), // In
@@ -323,6 +385,54 @@ assign Registers_WaitRequest = 0;
 
 
 
+	// ADC Module .............................................................. 
+		
+	wire [13:0]ADC_Samples[15:0];		// 14-bit sample for 16ch (2x8 Ch)
+	wire       ADC_Valid;
+	
+	reg  [ 3:0]opADC_CR;		// Declare as a "reg" to use in "if-else" statment
+									// inside an "always" block
+	wire       enADC_CR;		// Utility wire to enable CR and disable DB
+	
+//	// Combinational "always" block for "if-else" logic
+//	always @(*) begin
+//		 if (enADC_CR) begin
+//			  bpADC_CR_DB = opADC_CR; // enable driving of CR pins
+//		 end else begin
+//			  bpADC_CR_DB = 4'hZ;	// set to high impedance so that DB can be read
+//		 end
+//	end
+	
+	// Tri-state buffer
+	assign bpADC_CR_DB = enADC_CR ? opADC_CR : 4'hZ;
+
+	MAX11059 #(
+	  .Clock_kHz       (100_000),
+	  .SamplingRate_kHz(97.656_250)	// fs = 100kHz/1024 = 97.656_250 kSps
+	)ADC_inst(
+	  .ipClk    (Clk_100M ),
+	  .ipReset  (Reset),
+
+	  .opSamples(ADC_Samples),	// What lines/logic!?
+	  .opValid  (ADC_Valid  ),	// What lines/logic!?
+
+	  .opnCS    (opADC_nCS	 ),	
+	  .opCR     (opADC_CR 	 ),
+	  .enCR     (enADC_CR  	 ),
+	  .opnWR    (opADC_nWR 	 ),
+	  .opnRD    (opADC_nRD 	 ),
+	  .opCONVST (opADC_CONVST),
+	  .ipnEOC   (ipADC_nEOC	 ),
+	  .ipDB     ({ ipADC_DB, bpADC_CR_DB[3:2] })  // DB15 to DB2, DB1 to DB0
+	);		
+
+	// Now start to sample some values -----------------------------------------
+	
+
+	
+	
+	
+//------------------------------------------------------------------------------
 
 // If the RAM loading and reading does not work, try a tone
 

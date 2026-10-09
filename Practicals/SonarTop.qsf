@@ -141,6 +141,39 @@ set_instance_assignment -name BOARD_MODEL_NEAR_C 6.0P -to bpSDRAM*
 
 set_instance_assignment -name VIRTUAL_PIN ON -to opReadData*
 #-------------------------------------------------------------------------------
+# ADC PINS
+
+set_location_assignment PIN_W12 -to opADC_nCS[1]
+set_location_assignment PIN_AB2 -to opADC_nCS[2]
+
+set_location_assignment PIN_Y4 -to bpADC_CR_DB[0]
+set_location_assignment PIN_AA5 -to bpADC_CR_DB[1]
+set_location_assignment PIN_Y5 -to bpADC_CR_DB[2]
+set_location_assignment PIN_AA6 -to bpADC_CR_DB[3]
+set_location_assignment PIN_W13 -to opADC_nWR
+set_location_assignment PIN_AB13 -to opADC_nRD
+set_location_assignment PIN_Y3 -to opADC_CONVST
+
+set_location_assignment PIN_AB3 -to ipADC_nEOC[1]
+set_location_assignment PIN_AA2 -to ipADC_nEOC[2]
+
+set_location_assignment PIN_Y6 -to ipADC_DB[2]
+set_location_assignment PIN_AA7 -to ipADC_DB[3]
+set_location_assignment PIN_Y7 -to ipADC_DB[4]
+set_location_assignment PIN_AA8 -to ipADC_DB[5]
+set_location_assignment PIN_Y8 -to ipADC_DB[6]
+set_location_assignment PIN_AA9 -to ipADC_DB[7]
+set_location_assignment PIN_AA10 -to ipADC_DB[8]
+set_location_assignment PIN_AB10 -to ipADC_DB[9]
+set_location_assignment PIN_W11 -to ipADC_DB[10]
+set_location_assignment PIN_AB11 -to ipADC_DB[11]
+set_location_assignment PIN_Y11 -to ipADC_DB[12]
+set_location_assignment PIN_AB12 -to ipADC_DB[13]
+
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ipADC*
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to opADC*
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to bpADC*
+#-------------------------------------------------------------------------------
 
 set_global_assignment -name ENABLE_SIGNALTAP ON
 set_global_assignment -name USE_SIGNALTAP_FILE stp5.stp
@@ -360,8 +393,10 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to opLED[9]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to opLED
 set_location_assignment PIN_W10 -to opPA_en
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to opPA_en
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name SLD_FILE db/stp5_auto_stripped.stp
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name VERILOG_FILE ../Modules/SDRAM_Loader/VirtualJTAG_MM.v
+set_global_assignment -name QIP_FILE DDC_NCO/synthesis/DDC_NCO.qip
 set_global_assignment -name VERILOG_FILE ../Modules/ADC_Driver/MAX11059.v
 set_global_assignment -name QSYS_FILE DDC_NCO.qsys
 set_global_assignment -name QSYS_FILE Platform_Avalon.qsys
@@ -374,4 +409,3 @@ set_global_assignment -name SDC_FILE SonarPT2.sdc
 set_global_assignment -name QIP_FILE SDRAM_PLL.qip
 set_global_assignment -name SIGNALTAP_FILE stp5.stp
 set_global_assignment -name VERILOG_FILE PWM_module.v
-set_global_assignment -name SLD_FILE db/stp5_auto_stripped.stp
