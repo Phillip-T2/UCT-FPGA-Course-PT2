@@ -337,32 +337,111 @@ assign Registers_WaitRequest = 0;
 //  Registers_ReadDataValid <= Registers_Read;
 //end
 
-// Attempte to generate a tone
+	// Attempte to generate a tone
 
-	parameter CLK_DIV_TARGET = 191109;
-    
-   reg [17:0] clk_divider;
-   reg        tone_state;
-
-   always @(posedge Clk_100M or negedge ipnReset) begin
-       if (!ipnReset) begin
-           clk_divider <= 0;
-           tone_state  <= 1'b0;
-       end else if (clk_divider >= (CLK_DIV_TARGET - 1)) begin
-           clk_divider <= 0;
-           tone_state  <= ~tone_state; // Toggle at 523.26 Hz
-       end else begin
-           clk_divider <= clk_divider + 1'b1;
-       end
-   end
+//	parameter CLK_DIV_TARGET = 191109;
+//    
+//   reg [17:0] clk_divider;
+//   reg        tone_state;
+//
+//   always @(posedge Clk_100M or negedge ipnReset) begin
+//       if (!ipnReset) begin
+//           clk_divider <= 0;
+//           tone_state  <= 1'b0;
+//       end else if (clk_divider >= (CLK_DIV_TARGET - 1)) begin
+//           clk_divider <= 0;
+//           tone_state  <= ~tone_state; // Toggle at 523.26 Hz
+//       end else begin
+//           clk_divider <= clk_divider + 1'b1;
+//       end
+//   end
+	// The code above did work, but sounded horriable
+	
+	
+	
 
    // --- 2. Duty Cycle Selection ---
    wire [7:0] duty_cycle;
    
 	assign opPA_en = ipSwitch[0];
-   assign duty_cycle = tone_state ? 8'd128 : 8'd0;
-	
+   
+	wire   chirp_done;    // Flags when the 0.5s sweep finishes
 
+    // Internal bus to capture the full 16-bit unsigned sine wave
+//    wire [15:0] full_sine_wave;
+
+    // Connect the 8 Most Significant Bits (MSBs) to the duty_cycle output
+    // For unsigned values, this preserves the overall wave shape with lower resolution (0 to 255)
+//    assign duty_cycle = full_sine_wave[15:8];
+	 
+	 // 1. Sine ROM (Look-Up Table)
+    reg [15:0] sine_rom [0:1023]; 
+    initial begin
+        $readmemh("sine_table.mem", sine_rom);
+    end
+
+    // 2. Sample Rate Clock Enable Divider (100MHz / 2048 = 48.828125 kHz)
+    reg [10:0] sample_counter; // 11-bit counter to count up to 2048
+    wire       sample_en = (sample_counter == 11'd2047);
+
+    always @(posedge Clk_100M) begin
+        if (~ipnReset) begin
+            sample_counter <= 11'd0;
+        end else begin
+            sample_counter <= sample_counter + 1'b1; // Automatically rolls over at 2048
+        end
+    end
+
+    // 3. Phase Accumulator updating ONLY on the sample enable strobe
+    reg [23:0] phase_accumulator;
+    
+    // Constant value for a 260Hz tone at a sample rate of 48.828125 kHz
+    localparam [23:0] FIXED_FCW = 24'd89335; 
+
+    always @(posedge Clk_100M) begin
+        if (~ipnReset) begin
+            phase_accumulator <= 24'b0;
+        end else if (sample_en) begin
+            phase_accumulator <= phase_accumulator + FIXED_FCW;
+        end
+    end
+
+    // 4. Index the ROM and update duty_cycle synchronously with the sample rate
+    wire [9:0]  rom_index      = phase_accumulator[23:14];
+    wire [15:0] full_sine_wave = sine_rom[rom_index];
+    wire [7:0]  raw_unsigned   = full_sine_wave[15:8];
+
+    always @(posedge Clk_100M) begin
+        if (~ipnReset) begin
+            duty_cycle <= 8'h80; // Silent midpoint on reset
+        end else if (sample_en) begin
+            duty_cycle <= raw_unsigned; // Output updates exactly at 48.828125 kSps
+        end
+    end
+	 
+	 // ------------------------------------------------------------------------
+
+    // Instantiate the chirp generator
+//    chirp_generator u_chirp_gen (
+//        .clk             (Clk_100M),
+//        .reset           (~ipnReset),
+//        // Loopback: when the sweep finishes, it immediately triggers a new one.
+//        // We also use sys_reset to kick off the very first sweep.
+//        .start_sweep     (chirp_done || ~ipnReset), 
+//        
+//        // Configured for 1kHz to 5kHz over 1 seconds
+//        .freq_start_hz (32'd260),   // Start at 260 Hz
+//        .freq_stop_hz  (32'd260),   // Stop at 260 Hz (holds frequency constant)
+//        .freq_step_hz  (32'd0),     // No sweep step
+//        //.step_interval   (16'd25_000), // 25,000 clock cycles per 1 kHz step
+//		  .step_interval (16'd0),     // No interval step
+//        
+//        .sine_out        (full_sine_wave),
+//        .sweep_done      (chirp_done)
+//    );
+
+	// Now assign the output of the chirp generator to the duty cycle of the PWM module
+	
    // --- 3. Instantiate the PWM Generator ---
    PWM_module #(.Width(8)) PWM_inst (
        .ipClk(Clk_100M),
